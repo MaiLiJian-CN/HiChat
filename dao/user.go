@@ -1,9 +1,12 @@
 package dao
 
 import (
+	"HiChat/common"
 	"HiChat/global"
 	"HiChat/models"
 	"errors"
+	"strconv"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -23,13 +26,13 @@ func FindNuserByNameAndPwd(name string,password string) (*models.UserBasic,error
 		return nil,errors.New("Not Found this message")
 	}
 
-	// t:=strconv.Itoa(int(time.Now().Unix()))
+	t:=strconv.Itoa(int(time.Now().Unix()))
 
-	//temp := common.Md5encoder(t)
+	temp := common.Md5encoder(t)
 
-	// if tx:=global.DB.Model(&user).Where("id=?",user.ID).Update("identify",temp);tx.RowsAffected==0{
-	// 	return  nil,errors.New("write identity error")
-	// }
+	if tx:=global.DB.Model(&user).Where("id=?",user.ID).Update("identify",temp);tx.RowsAffected==0{
+		return  nil,errors.New("write identity error")
+	}
 	return &user,nil
 }
 
