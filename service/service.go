@@ -3,6 +3,7 @@ package service
 import (
 	"HiChat/common"
 	"HiChat/dao"
+	"HiChat/models"
 	"HiChat/middleware"
 	"net/http"
 
@@ -70,4 +71,9 @@ func LoginByNameAndPassWord(ctx *gin.Context) {
 		"userId":  Rsp.ID,
 	})
 
+}
+
+func NewUser(ctx *gin.Context){
+	user:=models.UserBasic{}
+	
 }
