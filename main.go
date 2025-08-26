@@ -10,5 +10,5 @@ func main() {
 	initialize.InitLogger()
 
 	router:=router.Router()
-	router.Run(":8080")
+	router.Run(":8089")
 }

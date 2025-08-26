@@ -30,7 +30,7 @@ func FindNuserByNameAndPwd(name string,password string) (*models.UserBasic,error
 
 	temp := common.Md5encoder(t)
 
-	if tx:=global.DB.Model(&user).Where("id=?",user.ID).Update("identify",temp);tx.RowsAffected==0{
+	if tx:=global.DB.Model(&user).Where("id=?",user.ID).Update("identity",temp);tx.RowsAffected==0{
 		return  nil,errors.New("write identity error")
 	}
 	return &user,nil

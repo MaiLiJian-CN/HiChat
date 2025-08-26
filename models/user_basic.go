@@ -1,18 +1,17 @@
 package models
 
 import (
-	"time"
+    "gorm.io/gorm"
 
-	"gorm.io/gorm"
+    "time"
 )
 
 type Model struct {
-	ID         uint `gorm:"primaryKey"`
-	CreeatedAd time.Time
-	UpdatedAt  time.Time
-	DeletedAt  gorm.DeletedAt `gorm:"index"`
+    ID        uint `gorm:"primaryKey"`
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    DeletedAt gorm.DeletedAt `gorm:"index"`
 }
-
 
 type UserBasic struct {
     Model
@@ -33,6 +32,7 @@ type UserBasic struct {
     DeviceInfo    string //登录设备
 }
 
-func (table *UserBasic) UserTableName() string{
-	return "user_basic"
+//UserTableName 指定表的名称
+func (table *UserBasic) UserTableName() string {
+    return "user_basic"
 }

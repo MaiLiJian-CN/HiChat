@@ -3,9 +3,15 @@ package service
 import (
 	"HiChat/common"
 	"HiChat/dao"
-	"HiChat/models"
 	"HiChat/middleware"
+	"HiChat/models"
+	"fmt"
+	"math/rand"
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/asaskevich/govalidator"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -73,7 +79,147 @@ func LoginByNameAndPassWord(ctx *gin.Context) {
 
 }
 
-func NewUser(ctx *gin.Context){
-	user:=models.UserBasic{}
-	
+func NewUser(ctx *gin.Context) {
+	user := models.UserBasic{}
+	user.Name = ctx.Request.FormValue("name")
+	passWord := ctx.Request.FormValue("password")
+	repassword := ctx.Request.FormValue("Identity")
+	if user.Name == "" || passWord == "" || repassword == "" {
+		ctx.JSON(http.StatusOK, gin.H{
+			"code":    -1,
+			"message": "name or pwd nil",
+			"data":    user,
+		})
+		return
+	}
+
+	//find user
+	_, err := dao.FindUser(user.Name)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{
+			"code":    -1,
+			"message": "user has been registered",
+			"data":    user,
+		})
+		return
+	}
+	if passWord != repassword {
+		ctx.JSON(http.StatusOK, gin.H{
+			"code":    -1,
+			"message": " password and repwd error",
+			"data":    user,
+		})
+		return
+	}
+	salt := fmt.Sprintf("%d", rand.Int31())
+
+	//secret
+	user.PassWord = common.SaltPassWord(passWord, salt)
+	user.Salt = salt
+	t := time.Now()
+	user.LoginTime = &t
+	user.LoginOutTime = &t
+	user.HeartBeatTime = &t
+	dao.CreateUser(user)
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "register user seccess",
+		"data":    user,
+	})
 }
+
+func UpdateUser(ctx *gin.Context) {
+	user := models.UserBasic{}
+	id, err := strconv.Atoi(ctx.Request.FormValue("id"))
+	if err != nil {
+		zap.S().Info("String to Int Err", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":    -1,
+			"message": "user update error",
+		})
+		return
+	}
+	user.ID = uint(id)
+	Name := ctx.Request.FormValue("name")
+	PassWord := ctx.Request.FormValue("password")
+	Email := ctx.Request.FormValue("email")
+	Phone := ctx.Request.FormValue("phone")
+	avatar := ctx.Request.FormValue("icon")
+	gender := ctx.Request.FormValue("gender")
+
+	if Email != "" {
+		user.Email = Email
+	}
+	if Phone != "" {
+		user.Phone = Phone
+	}
+	if avatar != "" {
+		user.Avatar = avatar
+	}
+	if gender != "" {
+		user.Gender = gender
+	}
+	if Name != "" {
+		user.Name = Name
+	}
+	if PassWord != "" {
+		salt := fmt.Sprintf("%d", rand.Int31())
+		user.Salt = salt
+		user.PassWord = common.SaltPassWord(PassWord, salt)
+	}
+
+
+ 	_, err = govalidator.ValidateStruct(user)
+	if err!=nil{
+		zap.S().Info("args error",err)
+		ctx.JSON(http.StatusBadRequest,gin.H{
+			"code":-1,
+			"message":"args error",
+		})
+
+		return
+	}
+
+	rep,err:=dao.UpdateUser(user)
+	if err!=nil{
+		zap.S().Info("update error",err)
+		ctx.JSON(http.StatusInternalServerError,gin.H{
+			"code":-1,
+			"message":"update error",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK,gin.H{
+		"code":0,
+		"message":"update success",
+		"data":rep.Name,
+	})
+}
+
+func DeleteUser(ctx *gin.Context){
+	user:=models.UserBasic{}
+	id,err:=strconv.Atoi(ctx.Request.FormValue("id"))
+	if err!=nil{
+		zap.S().Info("type change error",err)
+		ctx.JSON(http.StatusInternalServerError,gin.H{
+			"code":-1,
+			"message":"delete user error",
+		})
+		return
+	}
+	user.ID=uint(id)
+	err=dao.DeleteUser(user)
+	if err!=nil{
+		        zap.S().Info("注销用户失败", err)
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "code":    -1, //  0成功   -1失败
+            "message": "注销账号失败",
+        })
+        return
+	}
+	ctx.JSON(http.StatusOK,gin.H{
+		"code":0,
+		"message":"delete user success",
+	})
+}
+
