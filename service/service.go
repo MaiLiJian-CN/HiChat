@@ -5,6 +5,7 @@ import (
 	"HiChat/dao"
 	"HiChat/middleware"
 	"HiChat/models"
+
 	"fmt"
 	"math/rand"
 	"net/http"
