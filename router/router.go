@@ -1,6 +1,7 @@
 package router
 
 import (
+	"HiChat/middleware"
 	"HiChat/service"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,11 @@ func Router() *gin.Engine{
 		user.POST("/new",service.NewUser)
 		user.DELETE("/delete",service.DeleteUser)
 		user.POST("/update",service.UpdateUser)
+	}
+	relation:=v1.Group("relation").Use(middleware.JWY())
+	{
+		relation.POST("/list",service.FriendList)
+		relation.POST("/add",service.AddFriendByName)
 	}
 	return router
 }

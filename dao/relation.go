@@ -9,7 +9,7 @@ import (
 )
 
 // FirendList
-func FirendList(userId uint) ([]models.UserBasic, error) {
+func FriendList(userId uint) (*[]models.UserBasic, error) {
 	// 查询当前用户的好友关系
 	relation := make([]models.Relation, 0)
 	tx := global.DB.Where("owner_id=? and type=1", userId).Find(&relation)
@@ -30,7 +30,7 @@ func FirendList(userId uint) ([]models.UserBasic, error) {
 		zap.S().Info("Not Found Relation friend relation")
 		return nil, errors.New("Not Found Friend")
 	}
-	return user, nil
+	return &user, nil
 }
 
 // AddFriend 加好友

@@ -17,4 +17,9 @@ func main() {
 	if err!=nil{
 		panic(err)
 	}
+	err=db.AutoMigrate(&models.Relation{})
+	if err!=nil{
+		panic(err)
+	}
+	
 }	
