@@ -1,0 +1,10 @@
+port: '8089'
+mysql:
+  host: '127.0.0.1'
+  port: '3306'
+  name: 'HiChat'
+  user: 'root'
+  password: 'Welcome12'
+redis:
+  host: '127.0.0.1'
+  port: '6379'
