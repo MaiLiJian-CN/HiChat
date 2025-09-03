@@ -6,95 +6,217 @@ import (
 
 	"HiChat/common"
 	"HiChat/dao"
+	"HiChat/models"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-//user对返回数据进行屏蔽
+// user对返回数据进行屏蔽
 type user struct {
-    Name     string
-    Avatar   string
-    Gender   string
-    Phone    string
-    Email    string
-    Identity string
+	Name     string
+	Avatar   string
+	Gender   string
+	Phone    string
+	Email    string
+	Identity string
 }
 
-func FriendList(ctx *gin.Context){
+func FriendList(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Request.FormValue("userId"))
-	fmt.Println("id=",id)
-    users, err := dao.FriendList(uint(id))
-    if err != nil {
-        zap.S().Info("获取好友列表失败", err)
-        ctx.JSON(200, gin.H{
-            "code":    -1, //  0成功   -1失败
-            "message": "好友为空",
-        })
-        return
-    }
-
-
-    infos := make([]user, 0)
-
-    for _, v := range *users {
-        info := user{
-            Name:     v.Name,
-            Avatar:   v.Avatar,
-            Gender:   v.Gender,
-            Phone:    v.Phone,
-            Email:    v.Email,
-            Identity: v.Identity,
-        }
-        infos = append(infos, info)
-    }
-    common.RespOKList(ctx.Writer, infos, len(infos))
-
-}
-
-func AddFriendByName(ctx *gin.Context){
-	user:=ctx.PostForm("userId")
-	userId,err:=strconv.Atoi(user)
-	if 	err!=nil{
-		zap.S().Info("type change error",err)
+	fmt.Println("id=", id)
+	users, err := dao.FriendList(uint(id))
+	if err != nil {
+		zap.S().Info("获取好友列表失败", err)
+		ctx.JSON(200, gin.H{
+			"code":    -1, //  0成功   -1失败
+			"message": "好友为空",
+		})
 		return
 	}
-	tar:=ctx.PostForm("targetName")
-	target,err:=strconv.Atoi(tar)
-	if err!=nil{
-		code,err:=dao.AddFriendByName(uint(userId),tar)
-		if err!=nil{
-			HandleErr(code,ctx,err)
+
+	infos := make([]user, 0)
+
+	for _, v := range *users {
+		info := user{
+			Name:     v.Name,
+			Avatar:   v.Avatar,
+			Gender:   v.Gender,
+			Phone:    v.Phone,
+			Email:    v.Email,
+			Identity: v.Identity,
+		}
+		infos = append(infos, info)
+	}
+	common.RespOKList(ctx.Writer, infos, len(infos))
+
+}
+
+func AddFriendByName(ctx *gin.Context) {
+	user := ctx.PostForm("userId")
+	userId, err := strconv.Atoi(user)
+	if err != nil {
+		zap.S().Info("type change error", err)
+		return
+	}
+	tar := ctx.PostForm("targetName")
+	target, err := strconv.Atoi(tar)
+	if err != nil {
+		code, err := dao.AddFriendByName(uint(userId), tar)
+		if err != nil {
+			HandleErr(code, ctx, err)
 			return
 		}
-	}else{
-		code,err:=dao.AddFriend(uint(userId),uint(target))
-		if err!=nil{
-			HandleErr(code,ctx,err)
+	} else {
+		code, err := dao.AddFriend(uint(userId), uint(target))
+		if err != nil {
+			HandleErr(code, ctx, err)
 			return
 		}
 	}
-	ctx.JSON(200,gin.H{
-		"code":0,
-		"msg":"add Friend success",
+	ctx.JSON(200, gin.H{
+		"code": 0,
+		"msg":  "add Friend success",
 	})
 }
-func HandleErr(code int,ctx *gin.Context,err error){
-	switch code{
+func HandleErr(code int, ctx *gin.Context, err error) {
+	switch code {
 	case -1:
-		ctx.JSON(200,gin.H{
-			"code":-1,
-			"msg":err.Error(),
+		ctx.JSON(200, gin.H{
+			"code": -1,
+			"msg":  err.Error(),
 		})
 	case 0:
-		ctx.JSON(200,gin.H{
-			"code":-1,
-			"msg":"Friend is added",
+		ctx.JSON(200, gin.H{
+			"code": -1,
+			"msg":  "Friend is added",
 		})
 	case -2:
-		ctx.JSON(200,gin.H{
-			"code":-1,
-			"msg":"can not add self",
+		ctx.JSON(200, gin.H{
+			"code": -1,
+			"msg":  "can not add self",
 		})
 	}
+}
+
+// NewGroup 新建群聊
+func NewGroup(ctx *gin.Context) {
+	owner := ctx.PostForm("ownerId")
+	ownerId, err := strconv.Atoi(owner)
+	if err != nil {
+		zap.S().Info("owner类型转换失败", err)
+		return
+	}
+	ty := ctx.PostForm("cate")
+	Type, err := strconv.Atoi(ty)
+	if err != nil {
+		zap.S().Info("ty类型转换失败", err)
+		return
+	}
+	img := ctx.PostForm("icon")
+	name := ctx.PostForm("name")
+	desc := ctx.PostForm("desc")
+
+	community := models.Community{}
+	if ownerId == 0 {
+		ctx.JSON(200, gin.H{
+			"code":    -1, //  0成功   -1失败
+			"message": "您未登录",
+		})
+		return
+	}
+
+	if name == "" {
+		ctx.JSON(200, gin.H{
+			"code":    -1, //  0成功   -1失败
+			"message": "群名称不能为空",
+		})
+		return
+	}
+
+	if img != "" {
+		community.Image = img
+	}
+	if desc != "" {
+		community.Desc = desc
+	}
+
+	community.Name = name
+	community.Type = Type
+	community.OwnerId = uint(ownerId)
+
+	code, err := dao.CreateCommunity(community)
+	if err != nil {
+		HandleErr(code, ctx, err)
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"code":    0, //  0成功   -1失败
+		"message": "建群成功",
+	})
+
+}
+
+// GroupList 获取群列表
+func GroupList(ctx *gin.Context) {
+	owner := ctx.PostForm("ownerId")
+	ownerId, err := strconv.Atoi(owner)
+	if err != nil {
+		zap.S().Info("owner类型转换失败", err)
+		return
+	}
+	if ownerId == 0 {
+		ctx.JSON(200, gin.H{
+			"code":    -1,
+			"message": "您未登录",
+		})
+		return
+	}
+
+	rep, err := dao.GetCommunityList(uint(ownerId))
+	if err != nil {
+		zap.S().Info("获取群列表失败", err)
+		ctx.JSON(200, gin.H{
+			"code":    -1, //  0成功   -1失败
+			"message": "你还没加入任何群聊",
+		})
+		return
+	}
+	common.RespOKList(ctx.Writer, rep, len(*rep))
+}
+
+// JoinGroup 加入群聊
+func JoinGroup(ctx *gin.Context) {
+	comInfo := ctx.PostForm("comId")
+	if comInfo == "" {
+		ctx.JSON(200, gin.H{
+			"code":    -1,
+			"message": "群名称不能为空",
+		})
+		return
+	}
+
+	user := ctx.PostForm("userId")
+	userId, err := strconv.Atoi(user)
+	if err != nil {
+		zap.S().Info("user类型转换失败")
+		return
+	}
+	if userId == 0 {
+		ctx.JSON(200, gin.H{
+			"code":    -1,
+			"message": "你未登录",
+		})
+		return
+	}
+	code, err := dao.JoinCommunity(uint(userId), comInfo)
+	if err != nil {
+		HandleErr(code, ctx, err)
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"code":    0,
+		"message": "加群成功",
+	})
 }

@@ -21,5 +21,12 @@ func main() {
 	if err!=nil{
 		panic(err)
 	}
-	
+	err=db.AutoMigrate(&models.Community{})
+	if err!=nil{
+		panic(err)
+	}
+	err=db.AutoMigrate(&models.Message{})
+	if err!=nil {
+		panic(err)
+	}
 }	
